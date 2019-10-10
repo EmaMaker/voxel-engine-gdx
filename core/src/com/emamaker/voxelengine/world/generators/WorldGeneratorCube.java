@@ -1,6 +1,6 @@
 package  com.emamaker.voxelengine.world.generators;
 
-import static  com.emamaker.voxelengine.utils.Globals.chunkSize;
+import static  com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
 
 import  com.emamaker.voxelengine.block.CellId;
 import  com.emamaker.voxelengine.world.Chunk;

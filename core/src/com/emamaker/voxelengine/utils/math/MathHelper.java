@@ -1,6 +1,6 @@
 package  com.emamaker.voxelengine.utils.math;
 
-import static com.emamaker.voxelengine.utils.Globals.chunkSize;
+import static com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
 
 import java.math.BigDecimal;
 

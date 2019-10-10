@@ -1,26 +1,28 @@
 package com.emamaker.voxelengine.world;
 
-import static com.emamaker.voxelengine.utils.Globals.MAXX;
-import static com.emamaker.voxelengine.utils.Globals.MAXY;
-import static com.emamaker.voxelengine.utils.Globals.MAXZ;
-import static com.emamaker.voxelengine.utils.Globals.chunkSize;
-import static com.emamaker.voxelengine.utils.Globals.debug;
-import static com.emamaker.voxelengine.utils.Globals.pX;
-import static com.emamaker.voxelengine.utils.Globals.pY;
-import static com.emamaker.voxelengine.utils.Globals.pZ;
-import static com.emamaker.voxelengine.utils.Globals.renderDistance;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXX;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXY;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXZ;
+import static com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
+import static com.emamaker.voxelengine.utils.VoxelSettings.debug;
+import static com.emamaker.voxelengine.utils.VoxelSettings.pX;
+import static com.emamaker.voxelengine.utils.VoxelSettings.pY;
+import static com.emamaker.voxelengine.utils.VoxelSettings.pZ;
+import static com.emamaker.voxelengine.utils.VoxelSettings.renderDistance;
 
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Random;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btDiscreteCollisionDetectorInterface.Result;
 import com.emamaker.voxelengine.VoxelWorld;
 import com.emamaker.voxelengine.block.CellId;
-import com.emamaker.voxelengine.utils.Globals;
+import com.emamaker.voxelengine.utils.VoxelSettings;
 import com.emamaker.voxelengine.utils.math.MathHelper;
 //import com.emamaker.voxelengine.control.ControlsHandler;
 
@@ -61,12 +63,12 @@ public class WorldManager {
 		updateChunks = true;
 		generateChunks = true;
 
-		if (Globals.isTesting()) {
+		if (VoxelSettings.isTesting()) {
 			updateChunks = true;
 			generateChunks = false;
 
 			newChunk(0, 0, 0);
-			Globals.setWorldGenerator("generatorBase");
+			VoxelSettings.setWorldGenerator("generatorBase");
 			getChunk(0, 0, 0).generate();
 //			getChunk(0,0,0).processCells();
 		}
@@ -195,12 +197,12 @@ public class WorldManager {
 //    }
 
 	public void loadFromFile(int i, int j, int k) {
-		File f = Paths.get(Globals.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
+		File f = Paths.get(VoxelSettings.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
 		getChunk(i, j, k).loadFromFile(f);
 	}
 
 	public boolean canLoadFromFile(int i, int j, int k) {
-		File f = Paths.get(Globals.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
+		File f = Paths.get(VoxelSettings.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
 		return f.exists();
 	}
 
@@ -247,7 +249,7 @@ public class WorldManager {
 									newChunk(i, j, k);
 									loadFromFile(i, j, k);
 								} else {
-									if (j <= Globals.getWorldHeight()) {
+									if (j <= VoxelSettings.getWorldHeight()) {
 										newChunk(i, j, k);
 									}
 								}

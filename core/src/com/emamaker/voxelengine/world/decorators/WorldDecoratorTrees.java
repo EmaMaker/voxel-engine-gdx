@@ -1,11 +1,11 @@
 package  com.emamaker.voxelengine.world.decorators;
 
-import static  com.emamaker.voxelengine.utils.Globals.chunkSize;
+import static  com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
 
 import java.util.Random;
 
 import com.emamaker.voxelengine.block.CellId;
-import com.emamaker.voxelengine.utils.Globals;
+import com.emamaker.voxelengine.utils.VoxelSettings;
 import com.emamaker.voxelengine.world.Chunk;
 
 public class WorldDecoratorTrees extends WorldDecorator {
@@ -14,7 +14,7 @@ public class WorldDecoratorTrees extends WorldDecorator {
 
     @Override
     public void decorate(Chunk c) {
-        if (c.y == Globals.getWorldHeight() ) {
+        if (c.y == VoxelSettings.getWorldHeight() ) {
             int a;
             for (int i = 0; i < chunkSize; i++) {
                 for (int k = 0; k < chunkSize; k++) {
@@ -47,7 +47,7 @@ public class WorldDecoratorTrees extends WorldDecorator {
                     if (Math.sqrt(Math.pow(x - i, 2) + Math.pow(y - j, 2) + Math.pow(z - k, 2)) <= radius) {
                         //debug("Leave being placed in world coords: " + i + ", " + j + ", " + k);
 
-                        Globals.voxelWorld.worldManager.setCell(i, j, k, CellId.ID_LEAVES);
+                        VoxelSettings.voxelWorld.worldManager.setCell(i, j, k, CellId.ID_LEAVES);
                     }
                 }
             }

@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import  com.emamaker.voxelengine.utils.Globals;
-import static  com.emamaker.voxelengine.utils.Globals.debug;
+import  com.emamaker.voxelengine.utils.VoxelSettings;
+import static  com.emamaker.voxelengine.utils.VoxelSettings.debug;
 
 public class SimplexNoise {
 
@@ -52,8 +52,8 @@ public class SimplexNoise {
         Random rand = new Random();
 
         if (p == null) {
-            if (Globals.LOAD_FROM_FILE) {
-                loadFromFile(Paths.get(Globals.workingDir + "/" + Globals.permtableName).toFile());
+            if (VoxelSettings.LOAD_FROM_FILE) {
+                loadFromFile(Paths.get(VoxelSettings.workingDir + "/" + VoxelSettings.permtableName).toFile());
             } else {
                 p = new short[256];
                 for (int i = 0; i < 256; i++) {
@@ -434,7 +434,7 @@ public class SimplexNoise {
     public static void saveToFile() {
         PrintWriter write = null;
         try {
-            write = new PrintWriter(Globals.workingDir + Globals.permtableName);
+            write = new PrintWriter(VoxelSettings.workingDir + VoxelSettings.permtableName);
             write.write(Arrays.toString(p));
             write.close();
         } catch (FileNotFoundException ex) {

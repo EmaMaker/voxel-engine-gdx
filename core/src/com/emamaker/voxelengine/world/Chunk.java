@@ -1,10 +1,11 @@
 package com.emamaker.voxelengine.world;
 
-import static com.emamaker.voxelengine.utils.Globals.MAXX;
-import static com.emamaker.voxelengine.utils.Globals.MAXY;
-import static com.emamaker.voxelengine.utils.Globals.MAXZ;
-import static com.emamaker.voxelengine.utils.Globals.chunkSize;
-import static com.emamaker.voxelengine.utils.Globals.debug;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXX;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXY;
+import static com.emamaker.voxelengine.utils.VoxelSettings.MAXZ;
+import static com.emamaker.voxelengine.utils.VoxelSettings.blockSize;
+import static com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
+import static com.emamaker.voxelengine.utils.VoxelSettings.debug;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,25 +13,25 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.emamaker.voxelengine.block.CellId;
-import com.emamaker.voxelengine.utils.Globals;
+import com.emamaker.voxelengine.block.TextureManager;
+import com.emamaker.voxelengine.utils.VoxelSettings;
 import com.emamaker.voxelengine.utils.math.MathHelper;
 
 //import  com.emamaker.voxelengine.block.TextureManager;
@@ -69,7 +70,7 @@ public class Chunk {
 		this.y = y;
 		this.z = z;
 
-		pos = new Vector3(x * chunkSize, y * chunkSize, z * chunkSize);
+		pos = new Vector3(x * chunkSize * blockSize, y * chunkSize * blockSize, z * chunkSize * blockSize);
 		debug("Creating chunk starting at world coords" + pos.toString());
 
 //		chunkGeom = new Geometry(this.toString() + pos.toString(), chunkMesh);
@@ -215,14 +216,14 @@ public class Chunk {
 
 	public void generate() {
 		if (!generated) {
-			Globals.getWorldGenerator().generate(this);
+			VoxelSettings.getWorldGenerator().generate(this);
 			generated = true;
 		}
 	}
 
 	public void decorate() {
-		if (!decorated && Globals.decoratorsEnabled()) {
-			Globals.getWorldDecorator().decorate(this);
+		if (!decorated && VoxelSettings.decoratorsEnabled()) {
+			VoxelSettings.getWorldDecorator().decorate(this);
 			decorated = true;
 		}
 	}
@@ -266,7 +267,7 @@ public class Chunk {
 
 	// Saves the chunk to text file, with format X Y Z ID, separated by spaces
 	public void saveToFile() {
-		File f = Paths.get(Globals.workingDir + x + "-" + y + "-" + z + ".chunk").toFile();
+		File f = Paths.get(VoxelSettings.workingDir + x + "-" + y + "-" + z + ".chunk").toFile();
 		int[] coords;
 
 		if (!f.exists() && !isEmpty()) {
@@ -330,7 +331,7 @@ public class Chunk {
 			for (int j = -1; j <= 1; j++) {
 				for (int k = -1; k <= 1; k++) {
 					if (x + i >= 0 && x + i < MAXX && y + j >= 0 && y + j < MAXY && z + k >= 0 && z + k < MAXZ) {
-						if (Globals.voxelWorld.worldManager.getChunk(x + i, y + j, z + k) != null) {
+						if (VoxelSettings.voxelWorld.worldManager.getChunk(x + i, y + j, z + k) != null) {
 							v = true;
 						}
 					} else {
@@ -343,11 +344,12 @@ public class Chunk {
 	}
 
 	static boolean[][] meshed = new boolean[chunkSize * chunkSize * chunkSize][6];
-	ModelBuilder modelBuilder = new ModelBuilder();
+	ModelBuilder modelBuilder;
 	MeshPartBuilder meshBuilder;
 	VertexInfo v0, v1, v2, v3;
 	Model chunkModel;
 	ModelInstance instance;
+	Node node;
 
 	/**
 	 * MESH CONSTRUCTING STUFF
@@ -358,7 +360,6 @@ public class Chunk {
 
 		partIndex = 0;
 
-		clearAll();
 		meshing = true;
 
 		for (int i = 0; i < meshed.length; i++) {
@@ -368,12 +369,16 @@ public class Chunk {
 		}
 
 		int startX, startY, startZ, offX, offY, offZ, index, cPos, c1Pos;
-		short i0 = 0, i1 = 0, i2 = 0, i3 = 0;
 		byte c, c1;
-		VertexInfo v0, v1, v2, v3;
+		VertexInfo v0 = new VertexInfo(), v1 = new VertexInfo(), v2 = new VertexInfo(), v3 = new VertexInfo();
 		boolean done = false;
 
+		modelBuilder = new ModelBuilder();
 		modelBuilder.begin();
+		node = modelBuilder.node();
+		node.id = String.valueOf(partIndex);
+		node.translation.set(pos);
+
 		for (int a = 0; a < cells.length; a++) {
 			for (int s = 0; s < 3; s++) {
 				for (int i = 0; i < 2; i++) {
@@ -493,114 +498,128 @@ public class Chunk {
 						// sets the vertices
 						switch (s) {
 						case 0:
+							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
+									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+											| VertexAttributes.Usage.TextureCoordinates,
+									new Material(
+											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
 
-							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES, Usage.Position,
-									new Material());
-							meshBuilder.setColor(Color.WHITE);
-
-							v0 = new VertexInfo().setPos(startX + backfaces[0], startY, startZ).setCol(null).setUV(0.5f,
-									0.5f).setNor(1-backfaces[i]*2,0,0);
-							v1 = new VertexInfo().setPos(startX + backfaces[0], startY + offY, startZ).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(1-backfaces[i]*2,0,0);
-							v2 = new VertexInfo().setPos(startX + backfaces[0], startY + offY, startZ + offZ)
-									.setCol(null).setUV(0.5f, 0.5f).setNor(1-backfaces[i]*2,0,0);
-							v3 = new VertexInfo().setPos(startX + backfaces[0], startY, startZ + offZ).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(1-backfaces[i]*2,0,0);
+							v0.setPos(startX + backfaces[0], startY, startZ).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(1 - backfaces[i] * 2, 0, 0);
+							v1.setPos(startX + backfaces[0], startY + offY, startZ).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(1 - backfaces[i] * 2, 0, 0);
+							v2.setPos(startX + backfaces[0], startY + offY, startZ + offZ).setCol(null)
+									.setNor(1 - backfaces[i] * 2, 0, 0);
+							v3.setPos(startX + backfaces[0], startY, startZ + offZ).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(1 - backfaces[i] * 2, 0, 0);
 
 							partIndex++;
+
+							v0.position.x *= blockSize;
+							v0.position.y *= blockSize;
+							v0.position.z *= blockSize;
+							v1.position.x *= blockSize;
+							v1.position.y *= blockSize;
+							v1.position.z *= blockSize;
+							v2.position.x *= blockSize;
+							v2.position.y *= blockSize;
+							v2.position.z *= blockSize;
+							v3.position.x *= blockSize;
+							v3.position.y *= blockSize;
+							v3.position.z *= blockSize;
+
+							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
 
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v3, v2, v1, v0);
 							else
 								meshBuilder.rect(v0, v1, v2, v3);
 
-//							i0 = addVertex(v0);
-//							i1 = addVertex(v1);
-//							i2 = addVertex(v2);
-//							i3 = addVertex(v3);
-//
-//							addTextureVertex(i0, new Vector3(0, 0, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i1, new Vector3(0, offY, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i2, new Vector3(offZ, offY, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i3, new Vector3(offZ, 0, TextureManager.textures.get(c)[index]));
-
 							break;
 						case 1:
 							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
-									Usage.Position | Usage.Normal, new Material());
-							meshBuilder.setColor(Color.WHITE);
+									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+											| VertexAttributes.Usage.TextureCoordinates,
+									new Material(
+											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
 
-							v0 = new VertexInfo().setPos(startX, startY, startZ + backfaces[1]).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(0, 0, 1 - backfaces[i] * 2);
-							v1 = new VertexInfo().setPos(startX, startY + offY, startZ + backfaces[1]).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(0, 0, 1 - backfaces[i] * 2);
-							v2 = new VertexInfo().setPos(startX + offX, startY + offY, startZ + backfaces[1])
-									.setCol(null).setUV(0.5f, 0.5f).setNor(0, 0, 1 - backfaces[i] * 2);
-							v3 = new VertexInfo().setPos(startX + offX, startY, startZ + backfaces[1]).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(0, 0, 1 - backfaces[i] * 2);
+							v0.setPos(startX, startY, startZ + backfaces[1]).setCol(null).setNor(0, 0,
+									1 - backfaces[i] * 2);
+							v1.setPos(startX, startY + offY, startZ + backfaces[1]).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(0, 0, 1 - backfaces[i] * 2);
+							v2.setPos(startX + offX, startY + offY, startZ + backfaces[1]).setCol(null).setNor(0, 0,
+									1 - backfaces[i] * 2);
+							v3.setPos(startX + offX, startY, startZ + backfaces[1]).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(0, 0, 1 - backfaces[i] * 2);
+
+							v0.position.x *= blockSize;
+							v0.position.y *= blockSize;
+							v0.position.z *= blockSize;
+							v1.position.x *= blockSize;
+							v1.position.y *= blockSize;
+							v1.position.z *= blockSize;
+							v2.position.x *= blockSize;
+							v2.position.y *= blockSize;
+							v2.position.z *= blockSize;
+							v3.position.x *= blockSize;
+							v3.position.y *= blockSize;
+							v3.position.z *= blockSize;
+
 							partIndex++;
 
 //							if (backfaces[s] == 0)
 //								meshBuilder.rect();
 //							else
 
+							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
-							// i0 = addVertex(v0);
-//							i1 = addVertex(v1);
-//							i2 = addVertex(v2);
-//							i3 = addVertex(v3);
-
-//							addTextureVertex(i0, new Vector3(0, 0, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i1, new Vector3(0, offY, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i2, new Vector3(offX, offY, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i3, new Vector3(offX, 0, TextureManager.textures.get(c)[index]));
 
 							break;
 						case 2:
 							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
-									Usage.Position | Usage.Normal, new Material());
-							meshBuilder.setColor(Color.WHITE);
-							v0 = new VertexInfo().setPos(startX, startY + backfaces[2], startZ).setCol(null).setUV(0.5f,
-									0.5f).setNor(0,1-backfaces[i]*2,0);
-							v1 = new VertexInfo().setPos(startX + offX, startY + backfaces[2], startZ).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(0,1-backfaces[i]*2,0);
-							v2 = new VertexInfo().setPos(startX + offX, startY + backfaces[2], startZ + offZ)
-									.setCol(null).setUV(0.5f, 0.5f).setNor(0,1-backfaces[i]*2,0);
-							v3 = new VertexInfo().setPos(startX, startY + backfaces[2], startZ + offZ).setCol(null)
-									.setUV(0.5f, 0.5f).setNor(0,1-backfaces[i]*2,0);
-//
+									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+											| VertexAttributes.Usage.TextureCoordinates,
+									new Material(
+											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
 
+							v0.setPos(startX, startY + backfaces[2], startZ).setCol(null).setNor(0,
+									1 - backfaces[i] * 2, 0);
+							v1.setPos(startX + offX, startY + backfaces[2], startZ).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(0, 1 - backfaces[i] * 2, 0);
+							v2.setPos(startX + offX, startY + backfaces[2], startZ + offZ).setCol(null).setNor(0,
+									1 - backfaces[i] * 2, 0);
+							v3.setPos(startX, startY + backfaces[2], startZ + offZ).setCol(null).setUV(0.5f, 0.5f)
+									.setNor(0, 1 - backfaces[i] * 2, 0);
+
+							v0.position.x *= blockSize;
+							v0.position.y *= blockSize;
+							v0.position.z *= blockSize;
+							v1.position.x *= blockSize;
+							v1.position.y *= blockSize;
+							v1.position.z *= blockSize;
+							v2.position.x *= blockSize;
+							v2.position.y *= blockSize;
+							v2.position.z *= blockSize;
+							v3.position.x *= blockSize;
+							v3.position.y *= blockSize;
+							v3.position.z *= blockSize;
+
+							partIndex++;
+
+							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
-							partIndex++;
-//							i0 = addVertex(v0);
-//							i1 = addVertex(v1);
-//							i2 = addVertex(v2);
-//							i3 = addVertex(v3);
 
-//							addTextureVertex(i0, new Vector3(0, 0, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i1, new Vector3(0, offX, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i2, new Vector3(offZ, offX, TextureManager.textures.get(c)[index]));
-//							addTextureVertex(i3, new Vector3(offZ, 0, TextureManager.textures.get(c)[index]));
 							break;
 						default:
 							System.out.println("puzzette");
 							break;
 						}
-						// now constructs the mesh
-
-						indicesList.add(i0);
-						indicesList.add(i3);
-						indicesList.add(i2);
-						indicesList.add(i2);
-						indicesList.add(i1);
-						indicesList.add(i0);
-
 						meshing = false;
 						markMeshForUpdate(true);
 //                        setMesh();
@@ -612,93 +631,27 @@ public class Chunk {
 
 	}
 
-	public ArrayList<Vector3> verticesList = new ArrayList<>();
-	public ArrayList<Vector3> textureList = new ArrayList<>();
-	public ArrayList<Short> indicesList = new ArrayList<>();
-
-	Short[] short1;
-	short[] indices;
-
-	// usually called at the end of the update() method of chunk. creates the mesh
-	// from the vertices, indices and texCoord set by Cell and adds it to a geometry
-	// with a material with correct texture loaded
-//	public void setMesh() {
-//		try {
-//			// checking if there are empty buffers is important: loading empty buffers
-//			// causes a core dumped crash
-//			if (!verticesList.isEmpty() && !textureList.isEmpty() && !indicesList.isEmpty()) {
-//				short1 = indicesList.toArray(new Short[indicesList.size()]);
-//				indices = new short[short1.length];
-//				for (int i = 0; i < short1.length; i++) {
-//					indices[i] = Short.valueOf(Integer.toString(short1[i]));
-//				}
-//
-//				chunkMesh.setBuffer(VertexBuffer.Type.Position, 3,
-//						BufferUtils.createFloatBuffer(verticesList.toArray(new Vector3[verticesList.size()])));
-//				chunkMesh.setBuffer(VertexBuffer.Type.TexCoord, 3,
-//						BufferUtils.createFloatBuffer(textureList.toArray(new Vector3[textureList.size()])));
-//				chunkMesh.setBuffer(VertexBuffer.Type.Index, 3, BufferUtils.createShortBuffer(indices));
-//
-//				chunkMesh.updateBound();
-////            clearAll();        
-//			}
-//		} catch (Exception e) {
-//			debug(e);
-//		}
-//	}
-
-	public void clearAll() {
-		indicesList.clear();
-		verticesList.clear();
-		textureList.clear();
-	}
-
-	public Vector3 getVectorFor(int x, int y, int z) {
-		for (Vector3 v : verticesList) {
-			if (v.x == x && v.y == y && v.z == z) {
-				return v;
-			}
-		}
-		return null;
-	}
-
-	public short addVertex(Vector3 v) {
-		verticesList.add(v);
-		return (short) (verticesList.size() - 1);
-	}
-
-//	public void addTextureVertex(short index, Vector3 texVec) {
-//		try {
-//			textureList.add(index, texVec);
-//		} catch (IndexOutOfBoundsException e) {
-//			while (textureList.size() < index + 1) {
-//				textureList.add(Vector3.NAN);
-//			}
-//			textureList.add(index, texVec);
-//		}
-//	}
-
 	public boolean cellHasFreeSideWorld(int cellX, int cellY, int cellZ, int side) {
 //        System.out.println("Checking at world coords " + cellX + ", " + cellY + ", " + cellZ + " with side " + side);
 		switch (side) {
 		case 0:
-			return (Globals.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == Byte.MIN_VALUE);
 		case 1:
-			return (Globals.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == Byte.MIN_VALUE);
 		case 2:
-			return (Globals.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == Byte.MIN_VALUE);
 		case 3:
-			return (Globals.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == Byte.MIN_VALUE);
 		case 4:
-			return (Globals.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == Byte.MIN_VALUE);
 		case 5:
-			return (Globals.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR
-					|| Globals.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == Byte.MIN_VALUE);
+			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == Byte.MIN_VALUE);
 		default:
 			System.out.println("Ouch!");
 			return false;

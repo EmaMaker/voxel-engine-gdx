@@ -1,7 +1,7 @@
 package  com.emamaker.voxelengine.world.generators;
 
 import  com.emamaker.voxelengine.block.CellId;
-import static  com.emamaker.voxelengine.utils.Globals.chunkSize;
+import static  com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
 import  com.emamaker.voxelengine.world.Chunk;
 
 public class WorldGeneratorBase extends WorldGenerator {
