@@ -1,6 +1,6 @@
 package com.emamaker.voxelengine;
 
-import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.ApplicationAdapter; 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.emamaker.voxelengine.block.TextureManager;
 import com.emamaker.voxelengine.utils.VoxelSettings;
@@ -31,10 +32,11 @@ public class VoxelWorld {
 		mainApp = adapter;
 
 		globals = new VoxelSettings(this);
-		worldManager = new WorldManager(this);
 		textManager = new TextureManager(this);
 
 		customSettings();
+
+		worldManager = new WorldManager(this);
 
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
@@ -58,8 +60,10 @@ public class VoxelWorld {
 	}
 
 	void customSettings() {
+		VoxelSettings.setTesting(false);
 		VoxelSettings.setWorldGenerator("generatorTerrain");
-		VoxelSettings.setBlockSize(5);
+		VoxelSettings.setWorldHeight(0);
+		VoxelSettings.setBlockSize(1);
 	}
 
 	void launchUpdateThread() {

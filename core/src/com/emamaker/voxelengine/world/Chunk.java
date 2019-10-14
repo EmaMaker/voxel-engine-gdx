@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -346,7 +347,7 @@ public class Chunk {
 	static boolean[][] meshed = new boolean[chunkSize * chunkSize * chunkSize][6];
 	ModelBuilder modelBuilder;
 	MeshPartBuilder meshBuilder;
-	VertexInfo v0, v1, v2, v3;
+	VertexInfo v0 = new VertexInfo(), v1 = new VertexInfo(), v2 = new VertexInfo(), v3 = new VertexInfo();
 	Model chunkModel;
 	ModelInstance instance;
 	Node node;
@@ -370,7 +371,6 @@ public class Chunk {
 
 		int startX, startY, startZ, offX, offY, offZ, index, cPos, c1Pos;
 		byte c, c1;
-		VertexInfo v0 = new VertexInfo(), v1 = new VertexInfo(), v2 = new VertexInfo(), v3 = new VertexInfo();
 		boolean done = false;
 
 		modelBuilder = new ModelBuilder();
@@ -378,6 +378,7 @@ public class Chunk {
 		node = modelBuilder.node();
 		node.id = String.valueOf(partIndex);
 		node.translation.set(pos);
+		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
 
 		for (int a = 0; a < cells.length; a++) {
 			for (int s = 0; s < 3; s++) {
@@ -501,119 +502,78 @@ public class Chunk {
 							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
 									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
 											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(
-											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
+									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
 
-							v0.setPos(startX + backfaces[0], startY, startZ).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(1 - backfaces[i] * 2, 0, 0);
-							v1.setPos(startX + backfaces[0], startY + offY, startZ).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(1 - backfaces[i] * 2, 0, 0);
-							v2.setPos(startX + backfaces[0], startY + offY, startZ + offZ).setCol(null)
-									.setNor(1 - backfaces[i] * 2, 0, 0);
-							v3.setPos(startX + backfaces[0], startY, startZ + offZ).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(1 - backfaces[i] * 2, 0, 0);
+							v0.setPos(startX + backfaces[0], startY, startZ).setNor(1 - backfaces[i] * 2, 0, 0).setUV(0,
+									offY);
+							v1.setPos(startX + backfaces[0], startY + offY, startZ).setNor(1 - backfaces[i] * 2, 0, 0)
+									.setUV(0, 0);
+							v2.setPos(startX + backfaces[0], startY + offY, startZ + offZ)
+									.setNor(1 - backfaces[i] * 2, 0, 0).setUV(offZ, 0);
+							v3.setPos(startX + backfaces[0], startY, startZ + offZ).setNor(1 - backfaces[i] * 2, 0, 0)
+									.setUV(offZ, offY);
 
-							partIndex++;
-
-							v0.position.x *= blockSize;
-							v0.position.y *= blockSize;
-							v0.position.z *= blockSize;
-							v1.position.x *= blockSize;
-							v1.position.y *= blockSize;
-							v1.position.z *= blockSize;
-							v2.position.x *= blockSize;
-							v2.position.y *= blockSize;
-							v2.position.z *= blockSize;
-							v3.position.x *= blockSize;
-							v3.position.y *= blockSize;
-							v3.position.z *= blockSize;
-
-							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
+//							meshBuilder.setUVRange(
+//									new TextureRegion(TextureManager.getTexture(c, index), 0, 0, 1, 1));
 
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v3, v2, v1, v0);
 							else
 								meshBuilder.rect(v0, v1, v2, v3);
 
+							partIndex++;
+
 							break;
 						case 1:
 							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
 									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
 											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(
-											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
+									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
 
-							v0.setPos(startX, startY, startZ + backfaces[1]).setCol(null).setNor(0, 0,
-									1 - backfaces[i] * 2);
-							v1.setPos(startX, startY + offY, startZ + backfaces[1]).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(0, 0, 1 - backfaces[i] * 2);
-							v2.setPos(startX + offX, startY + offY, startZ + backfaces[1]).setCol(null).setNor(0, 0,
-									1 - backfaces[i] * 2);
-							v3.setPos(startX + offX, startY, startZ + backfaces[1]).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(0, 0, 1 - backfaces[i] * 2);
+							v0.setPos(startX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(0,
+									offY);
+							v1.setPos(startX, startY + offY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
+									.setUV(0, 0);
+							v2.setPos(startX + offX, startY + offY, startZ + backfaces[1])
+									.setNor(0, 0, 1 - backfaces[i] * 2).setUV(offX, 0);
+							v3.setPos(startX + offX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
+									.setUV(offX, offY);
 
-							v0.position.x *= blockSize;
-							v0.position.y *= blockSize;
-							v0.position.z *= blockSize;
-							v1.position.x *= blockSize;
-							v1.position.y *= blockSize;
-							v1.position.z *= blockSize;
-							v2.position.x *= blockSize;
-							v2.position.y *= blockSize;
-							v2.position.z *= blockSize;
-							v3.position.x *= blockSize;
-							v3.position.y *= blockSize;
-							v3.position.z *= blockSize;
+//							meshBuilder.setUVRange(
+//									new TextureRegion(TextureManager.getTexture(c, index), 0, 0, offX, offY));
 
-							partIndex++;
-
-//							if (backfaces[s] == 0)
-//								meshBuilder.rect();
-//							else
-
-							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
+
+							partIndex++;
 
 							break;
 						case 2:
 							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
 									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
 											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(
-											TextureAttribute.createDiffuse(TextureManager.getImageForId(c, index))));
+									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
 
-							v0.setPos(startX, startY + backfaces[2], startZ).setCol(null).setNor(0,
-									1 - backfaces[i] * 2, 0);
-							v1.setPos(startX + offX, startY + backfaces[2], startZ).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(0, 1 - backfaces[i] * 2, 0);
-							v2.setPos(startX + offX, startY + backfaces[2], startZ + offZ).setCol(null).setNor(0,
-									1 - backfaces[i] * 2, 0);
-							v3.setPos(startX, startY + backfaces[2], startZ + offZ).setCol(null).setUV(0.5f, 0.5f)
-									.setNor(0, 1 - backfaces[i] * 2, 0);
+							v0.setPos(startX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0).setUV(0,
+									offX);
+							v1.setPos(startX + offX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0)
+									.setUV(0, 0);
+							v2.setPos(startX + offX, startY + backfaces[2], startZ + offZ)
+									.setNor(0, 1 - backfaces[i] * 2, 0).setUV(offZ, 0);
+							v3.setPos(startX, startY + backfaces[2], startZ + offZ).setNor(0, 1 - backfaces[i] * 2, 0)
+									.setUV(offZ, offX);
 
-							v0.position.x *= blockSize;
-							v0.position.y *= blockSize;
-							v0.position.z *= blockSize;
-							v1.position.x *= blockSize;
-							v1.position.y *= blockSize;
-							v1.position.z *= blockSize;
-							v2.position.x *= blockSize;
-							v2.position.y *= blockSize;
-							v2.position.z *= blockSize;
-							v3.position.x *= blockSize;
-							v3.position.y *= blockSize;
-							v3.position.z *= blockSize;
+//							meshBuilder.setUVRange(
+//							new TextureRegion(TextureManager.getTexture(c, index), 0, 0, offZ, offX));
 
-							partIndex++;
-
-							meshBuilder.setUVRange(TextureManager.getImageForId(c, index));
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
+
+							partIndex++;
 
 							break;
 						default:

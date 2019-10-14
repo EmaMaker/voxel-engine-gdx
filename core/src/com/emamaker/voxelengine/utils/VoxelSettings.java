@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import com.badlogic.gdx.math.Matrix3;
 import com.emamaker.voxelengine.VoxelWorld;
 import com.emamaker.voxelengine.world.decorators.WorldDecorator;
 import com.emamaker.voxelengine.world.decorators.WorldDecoratorTrees;
@@ -51,7 +50,7 @@ public class VoxelSettings {
 	static boolean enableDecorators = true;
 
 	public static boolean LOAD_FROM_FILE = false;
-	public static boolean SAVE_ON_EXIT = true;
+	public static boolean SAVE_ON_EXIT = false;
 
 	public static String workingDir = System.getProperty("user.dir") + "/chunk-saves/";
 	public static String permtableName = "perm.table";

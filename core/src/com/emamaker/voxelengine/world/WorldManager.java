@@ -15,11 +15,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.bullet.collision.btDiscreteCollisionDetectorInterface.Result;
 import com.emamaker.voxelengine.VoxelWorld;
 import com.emamaker.voxelengine.block.CellId;
 import com.emamaker.voxelengine.utils.VoxelSettings;
@@ -70,7 +68,8 @@ public class WorldManager {
 			newChunk(0, 0, 0);
 			VoxelSettings.setWorldGenerator("generatorBase");
 			getChunk(0, 0, 0).generate();
-//			getChunk(0,0,0).processCells();
+//			getChunk(0,0,0).setCell(0, 0, 0, CellId.ID_GRASS);
+			getChunk(0,0,0).processCells();
 		}
 //        Globals.executor.submit(chunkManager);
 	}
