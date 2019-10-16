@@ -16,30 +16,26 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.emamaker.voxelengine.block.CellId;
-import com.emamaker.voxelengine.block.TextureManager;
+import com.emamaker.voxelengine.block.TextureManagerAtlas;
 import com.emamaker.voxelengine.utils.VoxelSettings;
 import com.emamaker.voxelengine.utils.math.MathHelper;
-
-//import  com.emamaker.voxelengine.block.TextureManager;
 
 public class Chunk {
 
 	boolean toBeSet = true;
+	boolean toUpdateInstance = false;
 	boolean toUpdateMesh = false;
 	boolean keepUpdating = true;
 	boolean loaded = false;
@@ -48,8 +44,6 @@ public class Chunk {
 	boolean meshing = false;
 	public boolean generated = false;
 	public boolean decorated = false;
-
-	int partIndex = 0;
 
 	// the chunk coords in the world
 	public int x, y, z;
@@ -74,12 +68,6 @@ public class Chunk {
 		pos = new Vector3(x * chunkSize * blockSize, y * chunkSize * blockSize, z * chunkSize * blockSize);
 		debug("Creating chunk starting at world coords" + pos.toString());
 
-//		chunkGeom = new Geometry(this.toString() + pos.toString(), chunkMesh);
-//		chunkGeom.setMaterial(Globals.mat);
-//		chunkGeom.setLocalTranslation(pos);
-//
-//		Globals.terrainNode.addControl((AbstractControl) this);
-
 		prepareCells();
 		markForUpdate(true);
 	}
@@ -92,7 +80,6 @@ public class Chunk {
 
 	public void processCells() {
 		if (toBeSet) {
-
 			for (int i = 0; i < chunkSize; i++) {
 				for (int j = 0; j < chunkSize; j++) {
 					for (int k = 0; k < chunkSize; k++) {
@@ -108,71 +95,10 @@ public class Chunk {
 		}
 	}
 
-//	public void updateMesh() {
-//		if (toUpdateMesh) {
-//			keepUpdating = false;
-//
-////			chunkMesh = new Mesh();
-////			setMesh();
-////			chunkGeom.setMesh(chunkMesh);
-//
-//			keepUpdating = true;
-//			markMeshForUpdate(false);
-//		}
-//	}
-
-//	public void load() {
-//		// on first load, Global material is null because it hasn't been initialized
-//		// yet, so it's set here
-//		if (chunkGeom.getMaterial() == null) {
-//			chunkGeom.setMaterial(Globals.mat);
-//		}
-//
-//		if (!loaded) {
-//			loaded = true;
-//			meshing = false;
-//			Globals.terrainNode.attachChild(chunkGeom);
-//			chunkGeom.setCullHint(Spatial.CullHint.Never);
-//		}
-//	}
-//
-//	public void unload() {
-//		if (loaded) {
-//			loaded = false;
-//			Globals.terrainNode.detachChild(chunkGeom);
-//		}
-//	}
-
-//	public void loadPhysics() {
-//		if (!phyLoaded && Globals.phyEnabled()) {
-//			try {
-//				this.chunkGeom.addControl(new RigidBodyControl(CollisionShapeFactory.createMeshShape(chunkGeom), 0f));
-//				Globals.main.getStateManager().getState(BulletAppState.class).getPhysicsSpace()
-//						.add(chunkGeom.getControl(RigidBodyControl.class));
-//				phyLoaded = true;
-//			} catch (Exception e) {
-//			}
-//		}
-//	}
-//
-//	public void unloadPhysics() {
-//		if (phyLoaded && Globals.phyEnabled()) {
-//
-//			chunkGeom.getControl(RigidBodyControl.class).setEnabled(false);
-//			chunkGeom.removeControl(chunkGeom.getControl(RigidBodyControl.class));
-//			// Globals.main.getStateManager().getState(BulletAppState.class).getPhysicsSpace().remove(chunkGeom);
-//			phyLoaded = false;
-//		}
-//	}
-//
-//	public void refreshPhysics() {
-//		unloadPhysics();
-//		loadPhysics();
-//	}
-
 	public void render(ModelBatch batch, Environment e) {
-		if (chunkModel != null) {
-			instance = new ModelInstance(chunkModel);
+		if (chunkModel != null && !meshing) {
+			if (toUpdateInstance)
+				instance = new ModelInstance(chunkModel);
 			if (instance != null) {
 				batch.render(instance, e);
 //				debug("Rending " + this);
@@ -228,34 +154,6 @@ public class Chunk {
 			decorated = true;
 		}
 	}
-
-//	@Override
-//	protected void controlUpdate(float tpf) {
-//		if (keepUpdating) {
-//			if ((Math.sqrt(Math.pow(x - pX, 2) + Math.pow(y - pY, 2) + Math.pow(z - pZ, 2)) > renderDistance)) {
-//				this.unload();
-//				this.unloadPhysics();
-//
-//				if (Math.sqrt(Math.pow(x - pX, 2) + Math.pow(y - pY, 2) + Math.pow(z - pZ, 2)) > renderDistance
-//						* 2.5f) {
-//					saveToFile();
-//					Globals.terrainNode.removeControl(this);
-//					// Globals.voxelWorld.worldManager.setChunk(x, y, z, null);
-//				}
-//			} else {
-//				this.load();
-//				if (Math.sqrt(Math.pow(x - pX, 2) + Math.pow(y - pY, 2) + Math.pow(z - pZ, 2)) <= 1) {
-//					this.refreshPhysics();
-//				} else {
-//					this.unloadPhysics();
-//				}
-//			}
-//		}
-//	}
-
-//	@Override
-//	protected void controlRender(RenderManager rm, ViewPort vp) {
-//	}
 
 	public boolean isEmpty() {
 		for (int i = 0; i < cells.length; i++) {
@@ -325,6 +223,10 @@ public class Chunk {
 		toUpdateMesh = b;
 	}
 
+	public void markInstanceForUpdate(boolean b) {
+		toUpdateInstance = b;
+	}
+
 	public boolean isVisible() {
 		boolean v = false;
 
@@ -345,12 +247,15 @@ public class Chunk {
 	}
 
 	static boolean[][] meshed = new boolean[chunkSize * chunkSize * chunkSize][6];
-	ModelBuilder modelBuilder;
+	ModelBuilder modelBuilder = new ModelBuilder();
 	MeshPartBuilder meshBuilder;
 	VertexInfo v0 = new VertexInfo(), v1 = new VertexInfo(), v2 = new VertexInfo(), v3 = new VertexInfo();
 	Model chunkModel;
 	ModelInstance instance;
 	Node node;
+	static int meshAttr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+			| VertexAttributes.Usage.TextureCoordinates;
+	int partIndex = 0;
 
 	/**
 	 * MESH CONSTRUCTING STUFF
@@ -373,22 +278,21 @@ public class Chunk {
 		byte c, c1;
 		boolean done = false;
 
-		modelBuilder = new ModelBuilder();
 		modelBuilder.begin();
 		node = modelBuilder.node();
 		node.id = String.valueOf(partIndex);
 		node.translation.set(pos);
-		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
+
+		meshBuilder = modelBuilder.part("part", GL20.GL_TRIANGLES, meshAttr, TextureManagerAtlas.material);
 
 		for (int a = 0; a < cells.length; a++) {
 			for (int s = 0; s < 3; s++) {
 				for (int i = 0; i < 2; i++) {
 
+					c = getCell(a);
 					int backfaces[] = { 0, 0, 0 };
 					backfaces[s] = i;
 					index = s * 2 + i;
-
-					c = getCell(a);
 
 					if (c != CellId.ID_AIR && c != Byte.MIN_VALUE && cellHasFreeSideChunk(a, index)
 							&& !meshed[a][index]) {
@@ -499,22 +403,24 @@ public class Chunk {
 						// sets the vertices
 						switch (s) {
 						case 0:
-							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
-									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
-											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
-
-							v0.setPos(startX + backfaces[0], startY, startZ).setNor(1 - backfaces[i] * 2, 0, 0).setUV(0,
-									offY);
+							v0.setPos(startX + backfaces[0], startY, startZ).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+									TextureManagerAtlas.getTexture(c, index)[0],
+									TextureManagerAtlas.getTexture(c, index)[3]);
 							v1.setPos(startX + backfaces[0], startY + offY, startZ).setNor(1 - backfaces[i] * 2, 0, 0)
-									.setUV(0, 0);
+									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v2.setPos(startX + backfaces[0], startY + offY, startZ + offZ)
-									.setNor(1 - backfaces[i] * 2, 0, 0).setUV(offZ, 0);
+									.setNor(1 - backfaces[i] * 2, 0, 0)
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v3.setPos(startX + backfaces[0], startY, startZ + offZ).setNor(1 - backfaces[i] * 2, 0, 0)
-									.setUV(offZ, offY);
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[3]);
 
-//							meshBuilder.setUVRange(
-//									new TextureRegion(TextureManager.getTexture(c, index), 0, 0, 1, 1));
+//							meshBuilder.setUVRange((TextureManagerAtlas.getTexture(c, index))[0],
+//									(TextureManagerAtlas.getTexture(c, index))[1],
+//									(TextureManagerAtlas.getTexture(c, index))[2],
+//									(TextureManagerAtlas.getTexture(c, index))[3]);
 
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v3, v2, v1, v0);
@@ -525,63 +431,79 @@ public class Chunk {
 
 							break;
 						case 1:
-							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
-									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
-											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
+//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index)[0],
+//									TextureManagerAtlas.getTexture(c, index)[1],
+//									TextureManagerAtlas.getTexture(c, index)[2],
+//									TextureManagerAtlas.getTexture(c, index)[3]);
+//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index));
 
-							v0.setPos(startX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(0,
-									offY);
+//							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES, meshAttr,
+//									TextureManager.getMaterial(c, index));
+
+							v0.setPos(startX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+									TextureManagerAtlas.getTexture(c, index)[0],
+									TextureManagerAtlas.getTexture(c, index)[3]);
 							v1.setPos(startX, startY + offY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
-									.setUV(0, 0);
+									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v2.setPos(startX + offX, startY + offY, startZ + backfaces[1])
-									.setNor(0, 0, 1 - backfaces[i] * 2).setUV(offX, 0);
+									.setNor(0, 0, 1 - backfaces[i] * 2)
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v3.setPos(startX + offX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
-									.setUV(offX, offY);
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[3]);
 
-//							meshBuilder.setUVRange(
-//									new TextureRegion(TextureManager.getTexture(c, index), 0, 0, offX, offY));
+//							meshBuilder.setUVRange((TextureManagerAtlas.getTexture(c, index))[0],
+//									(TextureManagerAtlas.getTexture(c, index))[1],
+//									(TextureManagerAtlas.getTexture(c, index))[2],
+//									(TextureManagerAtlas.getTexture(c, index))[3]);
 
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
 
-							partIndex++;
+//							partIndex++;
 
 							break;
 						case 2:
-							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES,
-									VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
-											| VertexAttributes.Usage.TextureCoordinates,
-									new Material(TextureAttribute.createDiffuse(TextureManager.getTexture(c, index))));
+//							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES, meshAttr,
+//									TextureManager.getMaterial(c, index));
+//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index)[0],
+//									TextureManagerAtlas.getTexture(c, index)[1],
+//									TextureManagerAtlas.getTexture(c, index)[2],
+//									TextureManagerAtlas.getTexture(c, index)[3]);
 
-							v0.setPos(startX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0).setUV(0,
-									offX);
+							v0.setPos(startX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+									TextureManagerAtlas.getTexture(c, index)[0],
+									TextureManagerAtlas.getTexture(c, index)[3]);
 							v1.setPos(startX + offX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0)
-									.setUV(0, 0);
+									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v2.setPos(startX + offX, startY + backfaces[2], startZ + offZ)
-									.setNor(0, 1 - backfaces[i] * 2, 0).setUV(offZ, 0);
+									.setNor(0, 1 - backfaces[i] * 2, 0)
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
 							v3.setPos(startX, startY + backfaces[2], startZ + offZ).setNor(0, 1 - backfaces[i] * 2, 0)
-									.setUV(offZ, offX);
-
-//							meshBuilder.setUVRange(
-//							new TextureRegion(TextureManager.getTexture(c, index), 0, 0, offZ, offX));
+									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[3]);
 
 							if (backfaces[s] == 0)
 								meshBuilder.rect(v1, v2, v3, v0);
 							else
 								meshBuilder.rect(v3, v2, v1, v0);
 
-							partIndex++;
+//							partIndex++;
 
 							break;
 						default:
 							System.out.println("puzzette");
 							break;
 						}
+
 						meshing = false;
-						markMeshForUpdate(true);
+						markInstanceForUpdate(true);
 //                        setMesh();
 					}
 				}

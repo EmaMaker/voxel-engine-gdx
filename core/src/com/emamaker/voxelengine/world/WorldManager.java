@@ -69,26 +69,10 @@ public class WorldManager {
 			VoxelSettings.setWorldGenerator("generatorBase");
 			getChunk(0, 0, 0).generate();
 //			getChunk(0,0,0).setCell(0, 0, 0, CellId.ID_GRASS);
-			getChunk(0,0,0).processCells();
+			getChunk(0, 0, 0).processCells();
 		}
 //        Globals.executor.submit(chunkManager);
 	}
-
-//    public void update() {
-//
-//        for (int i = pX - renderDistance; i < pX + renderDistance * 1.5; i++) {
-//            for (int j = pY - renderDistance; j < pY + renderDistance * 1.5; j++) {
-//                for (int k = pZ - renderDistance; k < pZ + renderDistance * 1.5; k++) {
-//
-//                    if (i >= 0 && i < MAXX && j >= 0 && j < MAXY && k >= 0 && k < MAXZ) {
-//                        if (getChunk(i, j, k) != null) {
-//                            getChunk(i, j, k).updateMesh();
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
 
 	// replaces the Cell.setId(id), and replaces making all the cell air when chunk
 	// is created. Commento storico del 2016 (Si, lo so che è il 2019 ora) -
@@ -189,12 +173,6 @@ public class WorldManager {
 		return Byte.MIN_VALUE;
 	}
 
-//    @Override
-//    public void cleanup() {
-//        updateChunks = false;
-//        Globals.executor.shutdownNow();
-//    }
-
 	public void loadFromFile(int i, int j, int k) {
 		File f = Paths.get(VoxelSettings.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
 		getChunk(i, j, k).loadFromFile(f);
@@ -227,9 +205,9 @@ public class WorldManager {
 //                controlHandler.breakBlock = false;
 //            }
 
-		pX = 0;
-		pY = 0;
-		pZ = 0;
+		pX = ((int) voxelWorld.cam.position.x) / chunkSize;
+		pY = ((int) voxelWorld.cam.position.y) / chunkSize;
+		pZ = ((int) voxelWorld.cam.position.z) / chunkSize;
 
 		for (int i = pX - renderDistance; i < pX + renderDistance * 1.5; i++) {
 			for (int j = pY - renderDistance; j < pY + renderDistance * 1.5; j++) {
