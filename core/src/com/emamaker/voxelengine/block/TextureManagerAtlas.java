@@ -1,7 +1,6 @@
 package com.emamaker.voxelengine.block;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.badlogic.gdx.graphics.Texture;
@@ -40,8 +39,9 @@ public class TextureManagerAtlas {
 	public TextureManagerAtlas(VoxelWorld world) {
 		voxelWorld = world;
 		
+//		textureAtlas.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
 		material = new Material(TextureAttribute.createDiffuse(textureAtlas));
-
+			
 //		addTextureRegion(OFF_DIRT, new Texture("dirt.png"));
 //		addTextureRegion(OFF_GRASS_SIDE, new Texture("grass_side.png"));
 //		addTextureRegion(OFF_GRASS_TOP, new Texture("grass_top.png"));
@@ -73,9 +73,8 @@ public class TextureManagerAtlas {
 	}
 
 	public void addTextureRegion(int array[]) {
-//		images.add(array[0], new TextureRegion(img, array[1]*TEXTURE_WIDTH, array[2]*TEXTURE_HEIGHT, (array[1]+1)*TEXTURE_WIDTH, (array[2]+1)*TEXTURE_HEIGHT));
 		images.add(array[0], new float[] { (((float)array[1])*TEXTURE_WIDTH) / ATLAS_WIDTH, (((float)array[2])*TEXTURE_HEIGHT) / ATLAS_HEIGHT, (((float)array[1]+1)*TEXTURE_WIDTH) / ATLAS_WIDTH, (((float)array[2]+1)*TEXTURE_HEIGHT) / ATLAS_HEIGHT } );
-		System.out.println(Arrays.toString(images.get(array[0])));
+//		System.out.println(Arrays.toString(images.get(array[0])));
 	}
 	
 	public static float[] getTexture(int id, int index) {

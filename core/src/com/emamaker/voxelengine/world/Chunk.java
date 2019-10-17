@@ -403,96 +403,78 @@ public class Chunk {
 						// sets the vertices
 						switch (s) {
 						case 0:
-							v0.setPos(startX + backfaces[0], startY, startZ).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
-									TextureManagerAtlas.getTexture(c, index)[0],
-									TextureManagerAtlas.getTexture(c, index)[3]);
-							v1.setPos(startX + backfaces[0], startY + offY, startZ).setNor(1 - backfaces[i] * 2, 0, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+							for (int p = startZ; p < startZ + offZ; p++) {
+								for (int q = startY; q < startY + offY; q++) {
+									v0.setPos(startX + backfaces[0], q, p).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[3]);
+									v1.setPos(startX + backfaces[0], q + 1, p).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-							v2.setPos(startX + backfaces[0], startY + offY, startZ + offZ)
-									.setNor(1 - backfaces[i] * 2, 0, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-											TextureManagerAtlas.getTexture(c, index)[1]);
-							v3.setPos(startX + backfaces[0], startY, startZ + offZ).setNor(1 - backfaces[i] * 2, 0, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+									v2.setPos(startX + backfaces[0], q + 1, p + 1).setNor(1 - backfaces[i] * 2, 0, 0)
+											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+													TextureManagerAtlas.getTexture(c, index)[1]);
+									v3.setPos(startX + backfaces[0], q, p + 1).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
 
-//							meshBuilder.setUVRange((TextureManagerAtlas.getTexture(c, index))[0],
-//									(TextureManagerAtlas.getTexture(c, index))[1],
-//									(TextureManagerAtlas.getTexture(c, index))[2],
-//									(TextureManagerAtlas.getTexture(c, index))[3]);
-
-							if (backfaces[s] == 0)
-								meshBuilder.rect(v3, v2, v1, v0);
-							else
-								meshBuilder.rect(v0, v1, v2, v3);
-
-							partIndex++;
+									if (backfaces[s] == 0)
+										meshBuilder.rect(v3, v2, v1, v0);
+									else
+										meshBuilder.rect(v0, v1, v2, v3);
+								}
+							}
 
 							break;
 						case 1:
-//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index)[0],
-//									TextureManagerAtlas.getTexture(c, index)[1],
-//									TextureManagerAtlas.getTexture(c, index)[2],
-//									TextureManagerAtlas.getTexture(c, index)[3]);
-//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index));
 
-//							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES, meshAttr,
-//									TextureManager.getMaterial(c, index));
-
-							v0.setPos(startX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
-									TextureManagerAtlas.getTexture(c, index)[0],
-									TextureManagerAtlas.getTexture(c, index)[3]);
-							v1.setPos(startX, startY + offY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+							for (int p = startX; p < startX + offX; p++) {
+								for (int q = startY; q < startY + offY; q++) {
+									v0.setPos(p, q, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[3]);
+									v1.setPos(p, q + 1, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-							v2.setPos(startX + offX, startY + offY, startZ + backfaces[1])
-									.setNor(0, 0, 1 - backfaces[i] * 2)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-											TextureManagerAtlas.getTexture(c, index)[1]);
-							v3.setPos(startX + offX, startY, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+									v2.setPos(p + 1, q + 1, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
+											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+													TextureManagerAtlas.getTexture(c, index)[1]);
+									v3.setPos(p + 1, q, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
 
-//							meshBuilder.setUVRange((TextureManagerAtlas.getTexture(c, index))[0],
-//									(TextureManagerAtlas.getTexture(c, index))[1],
-//									(TextureManagerAtlas.getTexture(c, index))[2],
-//									(TextureManagerAtlas.getTexture(c, index))[3]);
+									if (backfaces[s] == 0)
+										meshBuilder.rect(v1, v2, v3, v0);
+									else
+										meshBuilder.rect(v3, v2, v1, v0);
 
-							if (backfaces[s] == 0)
-								meshBuilder.rect(v1, v2, v3, v0);
-							else
-								meshBuilder.rect(v3, v2, v1, v0);
-
-//							partIndex++;
+								}
+							}
 
 							break;
 						case 2:
-//							meshBuilder = modelBuilder.part("part" + partIndex, GL20.GL_TRIANGLES, meshAttr,
-//									TextureManager.getMaterial(c, index));
-//							meshBuilder.setUVRange(TextureManagerAtlas.getTexture(c, index)[0],
-//									TextureManagerAtlas.getTexture(c, index)[1],
-//									TextureManagerAtlas.getTexture(c, index)[2],
-//									TextureManagerAtlas.getTexture(c, index)[3]);
 
-							v0.setPos(startX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
-									TextureManagerAtlas.getTexture(c, index)[0],
-									TextureManagerAtlas.getTexture(c, index)[3]);
-							v1.setPos(startX + offX, startY + backfaces[2], startZ).setNor(0, 1 - backfaces[i] * 2, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[0],
+							for (int p = startZ; p < startZ + offZ; p++) {
+								for (int q = startX; q < startX + offX; q++) {
+									v0.setPos(q, startY + backfaces[2], p).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
+											TextureManagerAtlas.getTexture(c, index)[3]);
+									v1.setPos(q + 1, startY + backfaces[2], p).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-							v2.setPos(startX + offX, startY + backfaces[2], startZ + offZ)
-									.setNor(0, 1 - backfaces[i] * 2, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-											TextureManagerAtlas.getTexture(c, index)[1]);
-							v3.setPos(startX, startY + backfaces[2], startZ + offZ).setNor(0, 1 - backfaces[i] * 2, 0)
-									.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+									v2.setPos(q + 1, startY + backfaces[2], p + 1).setNor(0, 1 - backfaces[i] * 2, 0)
+											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
+													TextureManagerAtlas.getTexture(c, index)[1]);
+									v3.setPos(q, startY + backfaces[2], p + 1).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
 
-							if (backfaces[s] == 0)
-								meshBuilder.rect(v1, v2, v3, v0);
-							else
-								meshBuilder.rect(v3, v2, v1, v0);
+									if (backfaces[s] == 0)
+										meshBuilder.rect(v1, v2, v3, v0);
+									else
+										meshBuilder.rect(v3, v2, v1, v0);
+								}
+							}
 
 //							partIndex++;
 
