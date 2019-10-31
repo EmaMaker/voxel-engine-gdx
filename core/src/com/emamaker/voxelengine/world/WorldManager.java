@@ -77,7 +77,7 @@ public class WorldManager {
 	// replaces the Cell.setId(id), and replaces making all the cell air when chunk
 	// is created. Commento storico del 2016 (Si, lo so che è il 2019 ora) -
 	// historical comment from 2016 (Yes, I know it's 2019 now)
-	public void setCell(int i, int j, int k, byte id) {
+	public void setCell(int i, int j, int k, CellId id) {
 		int plusX = i % chunkSize, plusY = j % chunkSize, plusZ = k % chunkSize;
 		int chunkX = (i - plusX) / chunkSize, chunkY = (j - plusY) / chunkSize, chunkZ = (k - plusZ) / chunkSize;
 
@@ -89,7 +89,7 @@ public class WorldManager {
 		}
 	}
 
-	public byte getCell(int i, int j, int k) {
+	public CellId getCell(int i, int j, int k) {
 		int plusX = i % chunkSize, plusY = j % chunkSize, plusZ = k % chunkSize;
 		int chunkX = (i - plusX) / chunkSize, chunkY = (j - plusY) / chunkSize, chunkZ = (k - plusZ) / chunkSize;
 
@@ -98,7 +98,7 @@ public class WorldManager {
 				return getChunk(chunkX, chunkY, chunkZ).getCell(plusX, plusY, plusZ);
 			}
 		}
-		return Byte.MIN_VALUE;
+		return null;
 	}
 
 	// returns the chunk is the specified coords
@@ -126,7 +126,7 @@ public class WorldManager {
 		setCell(getCellPosFromVertices(al), id);
 	}
 
-	public byte getCellFromVertices(ArrayList<Vector3> al) {
+	public CellId getCellFromVertices(ArrayList<Vector3> al) {
 		return getCell(getCellPosFromVertices(al));
 	}
 
@@ -164,13 +164,13 @@ public class WorldManager {
 		return null;
 	}
 
-	public byte getHighestCellAt(int i, int j) {
+	public CellId getHighestCellAt(int i, int j) {
 		for (int a = MAXY * chunkSize; a >= 0; a--) {
 			if (getCell(i, a, j) != CellId.ID_AIR) {
 				return getCell(i, a, j);
 			}
 		}
-		return Byte.MIN_VALUE;
+		return null;
 	}
 
 	public void loadFromFile(int i, int j, int k) {
@@ -194,16 +194,6 @@ public class WorldManager {
 //    };
 
 	public void updateChunks() {
-//        try {
-//            if (controlHandler.placeBlock) {
-//                controlHandler.placeBlock();
-//                controlHandler.placeBlock = false;
-//
-//            }
-//            if (controlHandler.breakBlock) {
-//                controlHandler.breakBlock();
-//                controlHandler.breakBlock = false;
-//            }
 
 		pX = ((int) voxelWorld.cam.position.x) / chunkSize;
 		pY = ((int) voxelWorld.cam.position.y) / chunkSize;
@@ -236,10 +226,6 @@ public class WorldManager {
 				}
 			}
 		}
-
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
 	}
 
 	public void renderChunks(ModelBatch batch, Environment e) {
@@ -269,11 +255,11 @@ public class WorldManager {
 		this.setCell((int) i, (int) j, (int) k, id);
 	}
 
-	public byte getCell(Vector3 v) {
+	public CellId getCell(Vector3 v) {
 		return v != null ? getCell((int) v.x, (int) v.y, (int) v.z) : null;
 	}
 
-	public byte getCell(float i, float j, float k) {
+	public CellId getCell(float i, float j, float k) {
 		return getCell((int) i, (int) j, (int) k);
 	}
 

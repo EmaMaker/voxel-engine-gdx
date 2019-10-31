@@ -49,7 +49,7 @@ public class Chunk {
 	public int x, y, z;
 
 	// public Cell[] cells = new Cell[chunkSize * chunkSize * chunkSize];
-	public byte[] cells = new byte[chunkSize * chunkSize * chunkSize];
+	public CellId[] cells = new CellId[chunkSize * chunkSize * chunkSize];
 
 //	public Mesh chunkMesh = new Mesh();
 //	public Geometry chunkGeom;
@@ -106,35 +106,35 @@ public class Chunk {
 		}
 	}
 
-	public byte getHighestCellAt(int i, int j) {
+	public CellId getHighestCellAt(int i, int j) {
 		return getCell(i, getHighestYAt(i, j), j);
 	}
 
 	public int getHighestYAt(int i, int j) {
 		for (int a = chunkSize; a >= 0; a--) {
-			if (getCell(i, a, j) != Byte.MIN_VALUE && getCell(i, a, j) != CellId.ID_AIR) {
+			if (getCell(i, a, j) != null && getCell(i, a, j) != CellId.ID_AIR) {
 				return a;
 			}
 		}
 		return Integer.MAX_VALUE;
 	}
 
-	public byte getCell(int i, int j, int k) {
+	public CellId getCell(int i, int j, int k) {
 		if (i >= 0 && j >= 0 && k >= 0 && i < chunkSize && j < chunkSize && k < chunkSize) {
 			return cells[MathHelper.flatCell3Dto1D(i, j, k)];
 		}
-		return Byte.MIN_VALUE;
+		return null;
 	}
 
-	public byte getCell(int index) {
+	public CellId getCell(int index) {
 		if (index >= 0 && index < cells.length || index != Integer.MAX_VALUE) {
 			return cells[index];
 		}
-		return Byte.MIN_VALUE;
+		return null;
 
 	}
 
-	public void setCell(int i, int j, int k, byte id) {
+	public void setCell(int i, int j, int k, CellId id) {
 		if (i >= 0 && j >= 0 && k >= 0 && i < chunkSize && j < chunkSize && k < chunkSize) {
 			cells[MathHelper.flatCell3Dto1D(i, j, k)] = id;
 		}
@@ -194,7 +194,7 @@ public class Chunk {
 
 					for (String s : lines) {
 						setCell(Integer.valueOf(s.split(",")[0]), Integer.valueOf(s.split(",")[1]),
-								Integer.valueOf(s.split(",")[2]), Byte.valueOf(s.split(",")[3]));
+								Integer.valueOf(s.split(",")[2]), CellId.valueOf(s.split(",")[3]));
 					}
 
 					generated = true;
@@ -275,7 +275,7 @@ public class Chunk {
 		}
 
 		int startX, startY, startZ, offX, offY, offZ, index, cPos, c1Pos;
-		byte c, c1;
+		CellId c, c1;
 		boolean done = false;
 
 		modelBuilder.begin();
@@ -294,7 +294,7 @@ public class Chunk {
 					backfaces[s] = i;
 					index = s * 2 + i;
 
-					if (c != CellId.ID_AIR && c != Byte.MIN_VALUE && cellHasFreeSideChunk(a, index)
+					if (c != CellId.ID_AIR && c != null && cellHasFreeSideChunk(a, index)
 							&& !meshed[a][index]) {
 						cPos = a;
 						startX = MathHelper.cell1Dto3D(cPos)[0];
@@ -315,7 +315,7 @@ public class Chunk {
 
 						c1Pos = MathHelper.flatCell3Dto1D(startX + offX, startY + offY, startZ + offZ);
 						c1 = getCell(c1Pos);
-						while (c1 != CellId.ID_AIR && c1 != Byte.MIN_VALUE && c1 == c
+						while (c1 != CellId.ID_AIR && c1 != null && c1 == c
 								&& cellHasFreeSideChunk(c1Pos, index) && !meshed[c1Pos][index]) {
 
 							meshed[c1Pos][index] = true;
@@ -500,22 +500,22 @@ public class Chunk {
 		switch (side) {
 		case 0:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX - 1, cellY, cellZ) == null);
 		case 1:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX + 1, cellY, cellZ) == null);
 		case 2:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ - 1) == null);
 		case 3:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY, cellZ + 1) == null);
 		case 4:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY - 1, cellZ) == null);
 		case 5:
 			return (VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR
-					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == Byte.MIN_VALUE);
+					|| VoxelSettings.voxelWorld.worldManager.getCell(cellX, cellY + 1, cellZ) == null);
 		default:
 			System.out.println("Ouch!");
 			return false;
@@ -541,22 +541,22 @@ public class Chunk {
 		switch (side) {
 		case 0:
 			return (getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR
-					|| getCell(cellX - 1, cellY, cellZ) == Byte.MIN_VALUE);
+					|| getCell(cellX - 1, cellY, cellZ) == null);
 		case 1:
 			return (getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR
-					|| getCell(cellX + 1, cellY, cellZ) == Byte.MIN_VALUE);
+					|| getCell(cellX + 1, cellY, cellZ) == null);
 		case 2:
 			return (getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR
-					|| getCell(cellX, cellY, cellZ - 1) == Byte.MIN_VALUE);
+					|| getCell(cellX, cellY, cellZ - 1) == null);
 		case 3:
 			return (getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR
-					|| getCell(cellX, cellY, cellZ + 1) == Byte.MIN_VALUE);
+					|| getCell(cellX, cellY, cellZ + 1) == null);
 		case 4:
 			return (getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR
-					|| getCell(cellX, cellY - 1, cellZ) == Byte.MIN_VALUE);
+					|| getCell(cellX, cellY - 1, cellZ) == null);
 		case 5:
 			return (getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR
-					|| getCell(cellX, cellY + 1, cellZ) == Byte.MIN_VALUE);
+					|| getCell(cellX, cellY + 1, cellZ) == null);
 		default:
 			System.out.println("Ouch!");
 			return false;

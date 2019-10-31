@@ -1,5 +1,7 @@
 package com.emamaker.voxelengine;
 
+import static com.emamaker.voxelengine.utils.VoxelSettings.chunkSize;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -47,8 +49,8 @@ public class VoxelWorld {
 		modelBatch = new ModelBatch();
 
 		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		cam.position.set(0f, 0f, 0f);
-		cam.lookAt(0, 0, 0);
+		cam.position.set(10f, 10f, 0f);
+		cam.lookAt(chunkSize, chunkSize, chunkSize);
 		cam.near = 1f;
 		cam.far = 300f;
 		cam.update();
@@ -88,7 +90,10 @@ public class VoxelWorld {
 		update();
 	}
 	
-	void render() {
+	public void render() {
+		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+		
 		camController.update();
 
 		renderUpdate();
@@ -100,6 +105,18 @@ public class VoxelWorld {
 
 	public void dispose() {
 		modelBatch.dispose();
+	}
+	
+	public void resize(int width, int height) {
+		
+	}
+	
+	public void pause() {
+		
+	}
+	
+	public void resume() {
+		
 	}
 
 }

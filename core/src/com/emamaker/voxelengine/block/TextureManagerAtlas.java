@@ -1,6 +1,7 @@
 package com.emamaker.voxelengine.block;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.badlogic.gdx.graphics.Texture;
@@ -21,7 +22,7 @@ public class TextureManagerAtlas {
 
 //	public static List<TextureRegion> images = new ArrayList<TextureRegion>();
 	public static List<float[]> images = new ArrayList<float[]>();
-	public static List<int[]> textures = new ArrayList<int[]>();
+	public static HashMap<CellId, int[]> textures = new HashMap<CellId, int[]>();
 	public static List<Material> materials = new ArrayList<Material>();
 
 	public static final float TEXTURE_WIDTH = 64;
@@ -67,9 +68,9 @@ public class TextureManagerAtlas {
 		setIdTexture(CellId.ID_STONE, OFF_STONE[0], OFF_STONE[0], OFF_STONE[0], OFF_STONE[0], OFF_STONE[0], OFF_STONE[0]);
 	}
 
-	public void setIdTexture(int id, int offWest, int offEast, int offNorth, int offSouth, int offBottom, int offTop) {
+	public void setIdTexture(CellId id, int offWest, int offEast, int offNorth, int offSouth, int offBottom, int offTop) {
 		int[] offsets = { offWest, offEast, offNorth, offSouth, offBottom, offTop };
-		textures.add(id, offsets);
+		textures.put(id, offsets);
 	}
 
 	public void addTextureRegion(int array[]) {
@@ -77,7 +78,7 @@ public class TextureManagerAtlas {
 //		System.out.println(Arrays.toString(images.get(array[0])));
 	}
 	
-	public static float[] getTexture(int id, int index) {
+	public static float[] getTexture(CellId id, int index) {
 		return images.get(textures.get(id)[index]);
 	}
 	

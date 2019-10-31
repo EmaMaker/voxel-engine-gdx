@@ -63,8 +63,10 @@ public class VoxelSettings {
 	public static int renderDistance = 8;
 	static int pickingDistance = 6;
 
-	static HashMap<String, WorldDecorator> decorators=new HashMap<String,WorldDecorator>(){{put("decoratorTrees",new WorldDecoratorTrees());}};
-	static HashMap<String, WorldGenerator> generators=new HashMap<String,WorldGenerator>(){{put("generatorBase",new WorldGeneratorBase());put("generatorCube",new WorldGeneratorCube());put("generatorTerrain",new WorldGeneratorTerrain());}};
+	@SuppressWarnings("serial")
+	static HashMap<String, WorldDecorator> decorators = new HashMap<String,WorldDecorator>(){{put("decoratorTrees",new WorldDecoratorTrees());}};
+	@SuppressWarnings("serial")
+	static HashMap<String, WorldGenerator> generators = new HashMap<String,WorldGenerator>(){{put("generatorBase",new WorldGeneratorBase());put("generatorCube",new WorldGeneratorCube());put("generatorTerrain",new WorldGeneratorTerrain());}};
 
 	public VoxelSettings(VoxelWorld world) {
 		VoxelSettings.voxelWorld = world;
