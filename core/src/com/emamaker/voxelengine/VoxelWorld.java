@@ -28,6 +28,7 @@ import com.badlogic.gdx.physics.bullet.collision.btManifoldPoint;
 import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
 import com.emamaker.voxelengine.block.TextureManagerAtlas;
+import com.emamaker.voxelengine.player.MouseCameraController;
 import com.emamaker.voxelengine.player.Player;
 import com.emamaker.voxelengine.shaders.TestShader;
 import com.emamaker.voxelengine.utils.VoxelSettings;
@@ -42,7 +43,7 @@ public class VoxelWorld {
 
 	public Environment environment;
 	public PerspectiveCamera cam;
-	public CameraInputController camController;
+	public MouseCameraController camController;
 	public ModelBatch modelBatch;
 
 	// Physics
@@ -112,7 +113,7 @@ public class VoxelWorld {
 		cam.far = 300f;
 		cam.update();
 
-		camController = new CameraInputController(cam);
+		camController = new MouseCameraController(cam);
 		Gdx.input.setInputProcessor(camController);
 	}
 

@@ -23,11 +23,10 @@ public class VoxelEngineGDX extends Game {
 		//Set windowed resolution
 		Gdx.graphics.setWindowedMode(1280, 720);
 		
-		VoxelSettings.usePlayer(false);
+		VoxelSettings.usePlayer(true);
 		world.init(this);
 		//Disable camera controller
 //		Gdx.input.setInputProcessor(null);
-		world.cam.rotate(Vector3.Y, -90);
 		
 	}
 
@@ -39,7 +38,8 @@ public class VoxelEngineGDX extends Game {
         yaw -= speedH * Gdx.input.getDeltaY();
         pitch -= speedV * Gdx.input.getDeltaX();
 
-		if(VoxelSettings.isUsingPlayer()) world.setCamera(new Vector3(world.p1.getPos().x, world.p1.getPos().y + 1, world.p1.getPos().z), new Vector3(pitch, 0f, yaw));
+//		if(VoxelSettings.isUsingPlayer()) world.setCamera(new Vector3(world.p1.getPos().x, world.p1.getPos().y + 1, world.p1.getPos().z), new Vector3(pitch, 0f, yaw));
+        if(VoxelSettings.isUsingPlayer()) world.camController.target.set(world.p1.getPos());
 	}
 
 	@Override
