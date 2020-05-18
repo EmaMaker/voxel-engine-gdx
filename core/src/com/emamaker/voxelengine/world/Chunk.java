@@ -13,22 +13,35 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.collision.Collision;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionObject;
+import com.badlogic.gdx.physics.bullet.collision.btConvexShape;
+import com.badlogic.gdx.physics.bullet.collision.btGhostPairCallback;
+import com.badlogic.gdx.physics.bullet.collision.btPairCachingGhostObject;
+import com.badlogic.gdx.physics.bullet.dynamics.btKinematicCharacterController;
 import com.emamaker.voxelengine.block.CellId;
 import com.emamaker.voxelengine.block.TextureManagerAtlas;
+import com.emamaker.voxelengine.physics.GameObject;
 import com.emamaker.voxelengine.utils.VoxelSettings;
 import com.emamaker.voxelengine.utils.math.MathHelper;
 
@@ -45,14 +58,19 @@ public class Chunk {
 	public boolean generated = false;
 	public boolean decorated = false;
 
+	GameObject.Constructor constructor;
+	GameObject object;
+
+	// chunk model and instance for rendering
+	Mesh mesh;
+
 	// the chunk coords in the world
 	public int x, y, z;
 
 	// public Cell[] cells = new Cell[chunkSize * chunkSize * chunkSize];
 	public CellId[] cells = new CellId[chunkSize * chunkSize * chunkSize];
 
-//	public Mesh chunkMesh = new Mesh();
-//	public Geometry chunkGeom;
+	ModelInstance instance;
 	Vector3 pos = new Vector3();
 	Random rand = new Random();
 
@@ -95,17 +113,13 @@ public class Chunk {
 		}
 	}
 
+	// Render the chunk
 	public void render(ModelBatch batch, Environment e) {
-		if (chunkModel != null && !meshing) {
-			if (toUpdateInstance)
-				instance = new ModelInstance(chunkModel);
-			if (instance != null) {
-				batch.render(instance, e);
-//				debug("Rending " + this);
-			}
-		}
+		if (object != null && !meshing)
+			batch.render(object, e);
 	}
 
+	/*-------		Some CellId get methods			-------*/
 	public CellId getHighestCellAt(int i, int j) {
 		return getCell(i, getHighestYAt(i, j), j);
 	}
@@ -119,6 +133,7 @@ public class Chunk {
 		return Integer.MAX_VALUE;
 	}
 
+	/*-------		Cells getters and setters			-------*/
 	public CellId getCell(int i, int j, int k) {
 		if (i >= 0 && j >= 0 && k >= 0 && i < chunkSize && j < chunkSize && k < chunkSize) {
 			return cells[MathHelper.flatCell3Dto1D(i, j, k)];
@@ -141,6 +156,7 @@ public class Chunk {
 		markForUpdate(true);
 	}
 
+	/*-------		Generators and decorators to use when chunk is being generated			-------*/
 	public void generate() {
 		if (!generated) {
 			VoxelSettings.getWorldGenerator().generate(this);
@@ -155,15 +171,7 @@ public class Chunk {
 		}
 	}
 
-	public boolean isEmpty() {
-		for (int i = 0; i < cells.length; i++) {
-			if (cells[i] != CellId.ID_AIR) {
-				return false;
-			}
-		}
-		return true;
-	}
-
+	/*-------			An orrible implementation of save files			-------*/
 	// Saves the chunk to text file, with format X Y Z ID, separated by spaces
 	public void saveToFile() {
 		File f = Paths.get(VoxelSettings.workingDir + x + "-" + y + "-" + z + ".chunk").toFile();
@@ -227,47 +235,33 @@ public class Chunk {
 		toUpdateInstance = b;
 	}
 
-	public boolean isVisible() {
-		boolean v = false;
-
-		for (int i = -1; i <= 1; i++) {
-			for (int j = -1; j <= 1; j++) {
-				for (int k = -1; k <= 1; k++) {
-					if (x + i >= 0 && x + i < MAXX && y + j >= 0 && y + j < MAXY && z + k >= 0 && z + k < MAXZ) {
-						if (VoxelSettings.voxelWorld.worldManager.getChunk(x + i, y + j, z + k) != null) {
-							v = true;
-						}
-					} else {
-						v = true;
-					}
-				}
-			}
-		}
-		return v;
-	}
-
+	/*-----			Greedy meshing algorithm. Doesn't quite work in GDX, was really faster and useful in jMonkeyEngine			-----*/
 	static boolean[][] meshed = new boolean[chunkSize * chunkSize * chunkSize][6];
-	ModelBuilder modelBuilder = new ModelBuilder();
-	MeshPartBuilder meshBuilder;
-	VertexInfo v0 = new VertexInfo(), v1 = new VertexInfo(), v2 = new VertexInfo(), v3 = new VertexInfo();
-	Model chunkModel;
-	ModelInstance instance;
-	Node node;
-	static int meshAttr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
-			| VertexAttributes.Usage.TextureCoordinates;
-	int partIndex = 0;
 
-	/**
-	 * MESH CONSTRUCTING STUFF
-	 */
-	// Kinda better greedy meshing algorithm than before. Now expanding in both axis
-	// (X-Y, Z-Y, X-Z), not gonna try to connect in negative side, it's not needed
-	public void kindaBetterGreedy() {
+	// Here go vertices and normals
+	ArrayList<Float> verts = new ArrayList<>();
+	// Here go indices
+	ArrayList<Short> indices = new ArrayList<>();
+	short i0, i1, i2, i3;
+	float[] verts2;
+	short[] indices2;
 
-		partIndex = 0;
-
+	ModelBuilder builder;
+	Node n;
+	Model model;
+	
+	private void kindaBetterGreedy() {
 		meshing = true;
+		verts.clear();
+		indices.clear();
+		index = 0;
 
+		if(model != null) model.dispose();
+		if(object != null) {
+			VoxelSettings.voxelWorld.dynamicsWorld.removeRigidBody(object.body);
+			object.dispose();
+		}
+		
 		for (int i = 0; i < meshed.length; i++) {
 			for (int j = 0; j < 6; j++) {
 				meshed[i][j] = false;
@@ -278,13 +272,6 @@ public class Chunk {
 		CellId c, c1;
 		boolean done = false;
 
-		modelBuilder.begin();
-		node = modelBuilder.node();
-		node.id = String.valueOf(partIndex);
-		node.translation.set(pos);
-
-		meshBuilder = modelBuilder.part("part", GL20.GL_TRIANGLES, meshAttr, TextureManagerAtlas.material);
-
 		for (int a = 0; a < cells.length; a++) {
 			for (int s = 0; s < 3; s++) {
 				for (int i = 0; i < 2; i++) {
@@ -294,8 +281,7 @@ public class Chunk {
 					backfaces[s] = i;
 					index = s * 2 + i;
 
-					if (c != CellId.ID_AIR && c != null && cellHasFreeSideChunk(a, index)
-							&& !meshed[a][index]) {
+					if (c != CellId.ID_AIR && c != null && cellHasFreeSideChunk(a, index) && !meshed[a][index]) {
 						cPos = a;
 						startX = MathHelper.cell1Dto3D(cPos)[0];
 						startY = MathHelper.cell1Dto3D(cPos)[1];
@@ -315,8 +301,8 @@ public class Chunk {
 
 						c1Pos = MathHelper.flatCell3Dto1D(startX + offX, startY + offY, startZ + offZ);
 						c1 = getCell(c1Pos);
-						while (c1 != CellId.ID_AIR && c1 != null && c1 == c
-								&& cellHasFreeSideChunk(c1Pos, index) && !meshed[c1Pos][index]) {
+						while (c1 != CellId.ID_AIR && c1 != null && c1 == c && cellHasFreeSideChunk(c1Pos, index)
+								&& !meshed[c1Pos][index]) {
 
 							meshed[c1Pos][index] = true;
 							if (startX + offX < chunkSize && startY + offY < chunkSize && startZ + offZ < chunkSize) {
@@ -405,94 +391,218 @@ public class Chunk {
 						case 0:
 							for (int p = startZ; p < startZ + offZ; p++) {
 								for (int q = startY; q < startY + offY; q++) {
-									v0.setPos(startX + backfaces[0], q, p).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+									i0 = addVertex(startX + backfaces[0], q, p,
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-									v1.setPos(startX + backfaces[0], q + 1, p).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+									i1 = addVertex(startX + backfaces[0], q + 1, p,
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-									v2.setPos(startX + backfaces[0], q + 1, p + 1).setNor(1 - backfaces[i] * 2, 0, 0)
-											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-													TextureManagerAtlas.getTexture(c, index)[1]);
-									v3.setPos(startX + backfaces[0], q, p + 1).setNor(1 - backfaces[i] * 2, 0, 0).setUV(
+									i2 = addVertex(startX + backfaces[0], q + 1, p + 1,
+											TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
+									i3 = addVertex(startX + backfaces[0], q, p + 1,
 											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-
-									if (backfaces[s] == 0)
-										meshBuilder.rect(v3, v2, v1, v0);
-									else
-										meshBuilder.rect(v0, v1, v2, v3);
+									if (backfaces[0] == 1) {
+										indices.add(i0);
+										indices.add(i1);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i3);
+										indices.add(i0);
+									} else {
+										indices.add(i0);
+										indices.add(i3);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i1);
+										indices.add(i0);
+									}
 								}
 							}
-
 							break;
 						case 1:
-
 							for (int p = startX; p < startX + offX; p++) {
 								for (int q = startY; q < startY + offY; q++) {
-									v0.setPos(p, q, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+									i0 = addVertex(p, q, startZ + backfaces[1],
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-									v1.setPos(p, q + 1, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+									i1 = addVertex(p, q + 1, startZ + backfaces[1],
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-									v2.setPos(p + 1, q + 1, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2)
-											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-													TextureManagerAtlas.getTexture(c, index)[1]);
-									v3.setPos(p + 1, q, startZ + backfaces[1]).setNor(0, 0, 1 - backfaces[i] * 2).setUV(
+									i2 = addVertex(p + 1, q + 1, startZ + backfaces[1],
+											TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
+									i3 = addVertex(p + 1, q, startZ + backfaces[1],
 											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-
-									if (backfaces[s] == 0)
-										meshBuilder.rect(v1, v2, v3, v0);
-									else
-										meshBuilder.rect(v3, v2, v1, v0);
-
+									if (backfaces[1] == 1) {
+										indices.add(i0);
+										indices.add(i3);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i1);
+										indices.add(i0);
+									} else {
+										indices.add(i0);
+										indices.add(i1);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i3);
+										indices.add(i0);
+									}
 								}
 							}
-
 							break;
-						case 2:
 
+						case 2:
 							for (int p = startZ; p < startZ + offZ; p++) {
 								for (int q = startX; q < startX + offX; q++) {
-									v0.setPos(q, startY + backfaces[2], p).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+									i0 = addVertex(q, startY + backfaces[2], p,
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-									v1.setPos(q + 1, startY + backfaces[2], p).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+									i1 = addVertex(q + 1, startY + backfaces[2], p,
 											TextureManagerAtlas.getTexture(c, index)[0],
 											TextureManagerAtlas.getTexture(c, index)[1]);
-									v2.setPos(q + 1, startY + backfaces[2], p + 1).setNor(0, 1 - backfaces[i] * 2, 0)
-											.setUV(TextureManagerAtlas.getTexture(c, index)[2],
-													TextureManagerAtlas.getTexture(c, index)[1]);
-									v3.setPos(q, startY + backfaces[2], p + 1).setNor(0, 1 - backfaces[i] * 2, 0).setUV(
+									i2 = addVertex(q + 1, startY + backfaces[2], p + 1,
+											TextureManagerAtlas.getTexture(c, index)[2],
+											TextureManagerAtlas.getTexture(c, index)[1]);
+									i3 = addVertex(q, startY + backfaces[2], p + 1,
 											TextureManagerAtlas.getTexture(c, index)[2],
 											TextureManagerAtlas.getTexture(c, index)[3]);
-
-									if (backfaces[s] == 0)
-										meshBuilder.rect(v1, v2, v3, v0);
-									else
-										meshBuilder.rect(v3, v2, v1, v0);
+									if (backfaces[2] == 1) {
+										indices.add(i0);
+										indices.add(i3);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i1);
+										indices.add(i0);
+									} else {
+										indices.add(i0);
+										indices.add(i1);
+										indices.add(i2);
+										indices.add(i2);
+										indices.add(i3);
+										indices.add(i0);
+									}
 								}
 							}
-
-//							partIndex++;
-
 							break;
 						default:
 							System.out.println("puzzette");
 							break;
 						}
 
-						meshing = false;
-						markInstanceForUpdate(true);
-//                        setMesh();
+					}
+
+				}
+			}
+		}
+
+		verts2 = new float[verts.size()];
+		indices2 = new short[indices.size()];
+		for (int p = 0; p < verts.size(); p++) {
+			verts2[p] = verts.get(p);
+//			if (p % 5 == 0)
+//				verts2[p] += pos.x;
+//			if (p % 5 == 1)
+//				verts2[p] += pos.y;
+//			if (p % 5 == 2)
+//				verts2[p] += pos.z;
+		}
+		for (int p = 0; p < indices.size(); p++)
+			indices2[p] = indices.get(p);
+
+//		System.out.println(verts2.length + " " + Arrays.toString(verts2));
+//		System.out.println(indices2.length + " " + Arrays.toString(indices2));
+
+		mesh = new Mesh(false, verts2.length / 4, indices2.length,
+				new VertexAttribute(Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE),
+				new VertexAttribute(Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+		mesh.setVertices(verts2);
+		mesh.setIndices(indices2);
+
+		builder = new ModelBuilder();
+		builder.begin();
+		n = builder.node();
+		n.id = "a";
+		MeshPartBuilder builder2 = builder.part("a", GL20.GL_TRIANGLES,
+				VertexAttributes.Usage.Position | VertexAttributes.Usage.TextureCoordinates,
+				TextureManagerAtlas.material);
+		builder2.addMesh(mesh);
+		Model model = builder.end();
+		instance = new ModelInstance(model);
+
+		constructor = new GameObject.Constructor(model, "a",
+				Bullet.obtainStaticNodeShape(instance.nodes), 0);
+		object = constructor.construct();
+
+		object.transform.trn(pos);
+		object.body.proceedToTransform(object.transform);
+
+		object.body.setCollisionFlags(
+				object.body.getCollisionFlags() | btCollisionObject.CollisionFlags.CF_CUSTOM_MATERIAL_CALLBACK);
+		VoxelSettings.voxelWorld.dynamicsWorld.addRigidBody(object.body);
+		object.body.setContactCallbackFlag(VoxelSettings.GROUND_FLAG);
+		object.body.setContactCallbackFilter(0);
+		object.body.setActivationState(Collision.DISABLE_DEACTIVATION);
+
+		meshing = false;
+	}
+
+	btGhostPairCallback ghostPairCallback;
+	btPairCachingGhostObject ghostObject;
+	btConvexShape ghostShape;
+	btKinematicCharacterController characterController;
+	Matrix4 characterTransform;
+	Vector3 characterDirection = new Vector3();
+	Vector3 walkDirection = new Vector3();
+
+	/**
+	 * @javadoc Adds the vertices to the array and returns the index of the vertex
+	 * 
+	 * @param x X position value of the vertex
+	 * @param y Y position value of the vertex
+	 * @param z Z position value of the vertex
+	 */
+	short index = 0;
+
+	private short addVertex(int x, int y, int z, float u, float v) {
+		verts.add((float) x);
+		verts.add((float) y);
+		verts.add((float) z);
+		verts.add(u);
+		verts.add(v);
+		return index++;
+	}
+
+	/*-----			To know some infos about the chunk and the cells		----- */
+	public boolean isVisible() {
+		boolean v = false;
+
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				for (int k = -1; k <= 1; k++) {
+					if (x + i >= 0 && x + i < MAXX && y + j >= 0 && y + j < MAXY && z + k >= 0 && z + k < MAXZ) {
+						if (VoxelSettings.voxelWorld.worldManager.getChunk(x + i, y + j, z + k) != null) {
+							v = true;
+						}
+					} else {
+						v = true;
 					}
 				}
 			}
 		}
-		chunkModel = modelBuilder.end();
+		return v;
+	}
 
+	public boolean isEmpty() {
+		for (int i = 0; i < cells.length; i++) {
+			if (cells[i] != CellId.ID_AIR) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public boolean cellHasFreeSideWorld(int cellX, int cellY, int cellZ, int side) {
@@ -540,23 +650,17 @@ public class Chunk {
 	public boolean cellHasFreeSideChunk(int cellX, int cellY, int cellZ, int side) {
 		switch (side) {
 		case 0:
-			return (getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR
-					|| getCell(cellX - 1, cellY, cellZ) == null);
+			return (getCell(cellX - 1, cellY, cellZ) == CellId.ID_AIR || getCell(cellX - 1, cellY, cellZ) == null);
 		case 1:
-			return (getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR
-					|| getCell(cellX + 1, cellY, cellZ) == null);
+			return (getCell(cellX + 1, cellY, cellZ) == CellId.ID_AIR || getCell(cellX + 1, cellY, cellZ) == null);
 		case 2:
-			return (getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR
-					|| getCell(cellX, cellY, cellZ - 1) == null);
+			return (getCell(cellX, cellY, cellZ - 1) == CellId.ID_AIR || getCell(cellX, cellY, cellZ - 1) == null);
 		case 3:
-			return (getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR
-					|| getCell(cellX, cellY, cellZ + 1) == null);
+			return (getCell(cellX, cellY, cellZ + 1) == CellId.ID_AIR || getCell(cellX, cellY, cellZ + 1) == null);
 		case 4:
-			return (getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR
-					|| getCell(cellX, cellY - 1, cellZ) == null);
+			return (getCell(cellX, cellY - 1, cellZ) == CellId.ID_AIR || getCell(cellX, cellY - 1, cellZ) == null);
 		case 5:
-			return (getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR
-					|| getCell(cellX, cellY + 1, cellZ) == null);
+			return (getCell(cellX, cellY + 1, cellZ) == CellId.ID_AIR || getCell(cellX, cellY + 1, cellZ) == null);
 		default:
 			System.out.println("Ouch!");
 			return false;
@@ -577,6 +681,11 @@ public class Chunk {
 
 	public String info() {
 		return (this.toString() + " at " + x + ", " + y + ", " + z);
+	}
+
+//	@Override
+	public void dispose() {
+		if(mesh != null) mesh.dispose();
 	}
 
 }

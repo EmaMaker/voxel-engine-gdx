@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
@@ -34,14 +35,14 @@ public class TextureManagerAtlas {
 	public VoxelWorld voxelWorld;
 //    SimpleApplication main;
 
-	Texture textureAtlas = new Texture("texture_atlas.png");
+	Texture textureAtlas = new Texture(Gdx.files.internal("data/textures/texture_atlas.png"));
 	public static Material material;
 
 	public TextureManagerAtlas(VoxelWorld world) {
 		voxelWorld = world;
 		
 //		textureAtlas.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
-		material = new Material(TextureAttribute.createDiffuse(textureAtlas));
+		material = new Material(/*new IntAttribute(IntAttribute.CullFace),*/ TextureAttribute.createDiffuse(textureAtlas));
 			
 //		addTextureRegion(OFF_DIRT, new Texture("dirt.png"));
 //		addTextureRegion(OFF_GRASS_SIDE, new Texture("grass_side.png"));
@@ -81,5 +82,4 @@ public class TextureManagerAtlas {
 	public static float[] getTexture(CellId id, int index) {
 		return images.get(textures.get(id)[index]);
 	}
-	
 }

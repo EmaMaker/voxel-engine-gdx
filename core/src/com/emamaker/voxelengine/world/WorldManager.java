@@ -46,17 +46,6 @@ public class WorldManager {
 		preload();
 	}
 
-//    @Override
-//    public void initialize(AppStateManager stateManager, Application app) {
-//        super.initialize(stateManager, app);
-//        this.app = (SimpleApplication) app;
-//        this.stateManager = stateManager;
-//        controlHandler = stateManager.getState(ControlsHandler.class);
-//
-//        chunks = new Chunk[MAXX][MAXY][MAXZ];
-//        preload();
-//    }
-
 	public void preload() {
 		updateChunks = true;
 		generateChunks = true;
@@ -66,10 +55,7 @@ public class WorldManager {
 			generateChunks = false;
 
 			newChunk(0, 0, 0);
-			VoxelSettings.setWorldGenerator("generatorBase");
-			getChunk(0, 0, 0).generate();
-//			getChunk(0,0,0).setCell(0, 0, 0, CellId.ID_GRASS);
-			getChunk(0, 0, 0).processCells();
+			setCell(8,8,8, CellId.ID_GRASS);
 		}
 //        Globals.executor.submit(chunkManager);
 	}
@@ -101,7 +87,7 @@ public class WorldManager {
 		return null;
 	}
 
-	// returns the chunk is the specified coords
+	// returns the chunk at the specified coords
 	public Chunk getChunkInWorld(int i, int j, int k) {
 		int plusX = i % chunkSize, plusY = j % chunkSize, plusZ = k % chunkSize;
 		int chunkX = (i - plusX) / chunkSize, chunkY = (j - plusY) / chunkSize, chunkZ = (k - plusZ) / chunkSize;
@@ -165,14 +151,18 @@ public class WorldManager {
 	}
 
 	public CellId getHighestCellAt(int i, int j) {
-		for (int a = MAXY * chunkSize; a >= 0; a--) {
-			if (getCell(i, a, j) != CellId.ID_AIR) {
-				return getCell(i, a, j);
-			}
-		}
-		return null;
+		return getCell(i, getHighestYAt(i, j), j);
 	}
 
+	public int getHighestYAt(int i, int j) {
+		for (int a = MAXY *chunkSize; a >= 0; a--) {
+			if (getCell(i, a, j) != null && getCell(i, a, j) != CellId.ID_AIR) {
+				return a;
+			}
+		}
+		return Integer.MAX_VALUE;
+	}
+	
 	public void loadFromFile(int i, int j, int k) {
 		File f = Paths.get(VoxelSettings.workingDir + i + "-" + j + "-" + k + ".chunk").toFile();
 		getChunk(i, j, k).loadFromFile(f);
@@ -194,7 +184,6 @@ public class WorldManager {
 //    };
 
 	public void updateChunks() {
-
 		pX = ((int) voxelWorld.cam.position.x) / chunkSize;
 		pY = ((int) voxelWorld.cam.position.y) / chunkSize;
 		pZ = ((int) voxelWorld.cam.position.z) / chunkSize;
@@ -229,7 +218,6 @@ public class WorldManager {
 	}
 
 	public void renderChunks(ModelBatch batch, Environment e) {
-
 		for (int i = pX - renderDistance; i < pX + renderDistance * 1.5; i++) {
 			for (int j = pY - renderDistance; j < pY + renderDistance * 1.5; j++) {
 				for (int k = pZ - renderDistance; k < pZ + renderDistance * 1.5; k++) {
@@ -239,6 +227,16 @@ public class WorldManager {
 							getChunk(i, j, k).render(batch, e);
 						}
 					}
+				}
+			}
+		}
+	}
+
+	public void dispose() {
+		for (int i = 0; i < MAXX; i++) {
+			for (int j = 0; j < MAXY; j++) {
+				for (int k = 0; k < MAXZ; k++) {
+					if(getChunk(i,j,k) != null) getChunk(i,j,k).dispose();
 				}
 			}
 		}

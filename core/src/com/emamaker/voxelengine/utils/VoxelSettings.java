@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.emamaker.voxelengine.VoxelWorld;
 import com.emamaker.voxelengine.world.decorators.WorldDecorator;
 import com.emamaker.voxelengine.world.decorators.WorldDecoratorTrees;
@@ -19,6 +20,10 @@ import com.emamaker.voxelengine.world.generators.WorldGeneratorCube;
 import com.emamaker.voxelengine.world.generators.WorldGeneratorTerrain;
 
 public class VoxelSettings {
+	
+	public final static short GROUND_FLAG = 1 << 8;
+	public final static short OBJECT_FLAG = 1 << 9;
+	public final static short ALL_FLAG = -1;
 
 	// the lenght of a chunk side
 	public static int chunkSize = 16;
@@ -30,19 +35,15 @@ public class VoxelSettings {
 
 	// a static instantiate of Main class
 	public static VoxelWorld voxelWorld;
-//    public static SimpleApplication main;
-//    public static VoxelEngine engine;
-//    public static ControlsHandler control;
-//    public static WorldManager prov;
-//    public static Material mat;
-//    public static Node terrainNode = new Node();
-
+	public static ModelBuilder modelBuilder = new ModelBuilder();
+	
 	// settings
 	static boolean TESTING = false;
 	static boolean enableDebug = false;
 	static boolean enablePhysics = true;
 	static boolean enablePlayer = true;
 	static boolean enableWireframe = false;
+	static boolean usePlayer = false;
 
 	static WorldGenerator generator = new WorldGeneratorBase();
 	static String generatorS = "", decoratorS = "";
@@ -70,35 +71,12 @@ public class VoxelSettings {
 
 	public VoxelSettings(VoxelWorld world) {
 		VoxelSettings.voxelWorld = world;
-//    	pGY = voxelWorld.worldManager.getHighestCellAt(pGX, pGZ);
 
 		if (VoxelSettings.LOAD_FROM_FILE) {
 			VoxelSettings.loadFromFile();
 		}
 	}
 
-//    @Override
-//    public void initialize(AppStateManager stateManager, Application app) {
-//        super.initialize(stateManager, app);
-//        
-//
-//        Globals.main = (SimpleApplication) app;
-//        prov = stateManager.getState(WorldManager.class);
-//        engine = stateManager.getState(VoxelEngine.class);
-//        control = stateManager.getState(ControlsHandler.class);
-//
-//        mat = new Material(main.getAssetManager(), "Materials/UnshadedArray.j3md");
-//
-//        main.getRootNode().attachChild(terrainNode);
-//        mat.getAdditionalRenderState().setWireframe(enableWireframe);
-//        mat.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Off);
-//
-//        pGY = prov.getHighestCellAt(pGX, pGZ);
-//
-//        if (Globals.LOAD_FROM_FILE) {
-//            Globals.loadFromFile();
-//        }
-//    }
 
 	public static void saveToFile() {
 		String save = "";
@@ -393,6 +371,14 @@ public class VoxelSettings {
 		MAXX = x;
 		MAXY = y;
 		MAXZ = z;
+	}
+	
+	public static void usePlayer(boolean b) {
+		usePlayer = b;
+	}
+	
+	public static boolean isUsingPlayer() {
+		return usePlayer;
 	}
 
 }
