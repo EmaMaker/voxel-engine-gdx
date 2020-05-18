@@ -158,7 +158,7 @@ public class VoxelWorld {
 	}
 
 	public void dispose() {
-		p1.dispose();
+		if (VoxelSettings.isUsingPlayer() && p1.disposed )p1.dispose();
 		worldManager.dispose();
 
 		dynamicsWorld.dispose();

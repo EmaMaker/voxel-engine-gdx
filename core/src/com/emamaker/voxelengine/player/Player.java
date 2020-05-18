@@ -31,6 +31,8 @@ public class Player {
 
 	static Random rand = new Random();
 	
+	public boolean disposed = false;
+	
 	// player model building stuff
 	public Model playerModel;
 	public ModelInstance instance;
@@ -224,5 +226,6 @@ public class Player {
 		ghostObject.dispose();
 		ghostShape.dispose();
 		playerModel.dispose();
+		disposed = true;
 	}
 }
